@@ -1,0 +1,13 @@
+{
+  "name": "jarida-23222",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build-data.mjs",
+    "test": "node tools/build-data.mjs && node tests/e2e.mjs",
+    "deploy": "node tools/build-data.mjs && node tests/e2e.mjs && git add -A && (git diff --cached --quiet || git commit -m \"تحديث الموقع\") && git push"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

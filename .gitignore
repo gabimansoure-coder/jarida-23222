@@ -1,0 +1,10 @@
+# البيانات الخامّ (أسماء ورموز مكشوفة) — لا تُرفع أبدًا
+/data.json
+/index.html
+/PROMPT-claude-code.md
+
+node_modules/
+test-results/
+*.log
+.DS_Store
+.claude/
