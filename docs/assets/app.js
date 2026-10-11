@@ -241,7 +241,11 @@ function initUI(){
     e.preventDefault();const v=$('#codeIn').value.trim();const err=$('#loginErr');err.textContent='';
     if(!v){err.textContent='اكتب الرمز أولًا.';return}
     const btn=$('#loginForm .btn');btn.disabled=true;btn.textContent='جارٍ الفحص…';
-    try{await handleLogin(v,err)}catch(ex){err.textContent='تعذّر الفحص على هذا المتصفّح؛ جرّب متصفّحًا أحدث.'}
+    try{await handleLogin(v,err)}catch(ex){
+      err.textContent=(window.crypto&&crypto.subtle)
+        ?'تعذّر الفحص على هذا المتصفّح؛ جرّب متصفّحًا أحدث.'
+        :'افتح الموقع عبر الرابط الآمن https://'+location.host+' — فكّ التشفير لا يعمل على http. إن لم يفتح الرابط الآمن فجرّب بعد دقائق.';
+    }
     btn.disabled=false;btn.textContent='دخول';
   });
   $('#toTeacher').addEventListener('click',()=>{$('#codeIn').value='';$('#codeIn').placeholder='رمز المعلّم';$('#codeIn').focus()});
