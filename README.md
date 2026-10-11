@@ -50,4 +50,7 @@ npm run deploy
 
 ## أين الموقع؟
 
-GitHub Pages من فرع `main` مجلّد `/docs` — الرابط في صفحة المستودع تحت **Settings ▸ Pages**.
+**https://jarida.gabimansour.com** — دومين مخصّص فوق GitHub Pages (فرع `main` مجلّد `/docs`، المستودع `gabimansoure-coder/jarida-23222`).
+
+- الرابط الاحتياطيّ المباشر: https://gabimansoure-coder.github.io/jarida-23222/
+- DNS: سجلّ `CNAME jarida → gabimansoure-coder.github.io` (وضع DNS only) في Cloudflare على دومين `gabimansour.com`؛ اسم الدومين المخصّص محفوظ أيضًا في `docs/CNAME`.
