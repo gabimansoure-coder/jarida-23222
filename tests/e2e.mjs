@@ -152,6 +152,29 @@ ok('دخول 136 طالبًا: الاسم والزاوية و≥3 مصادر و�
   await page.click('#guide .gstep .copy >> nth=0');
   const boxTxt = await page.evaluate(() => document.querySelector('#guide .gstep .pbox.open').textContent);
   ok('زرّ الخطوة يفتح الأمر الملائم مملوءًا', boxTxt.length > 50 && !boxTxt.includes('{{'));
+
+  /* 5ب — الجريدة النموذجية */
+  await page.click('#guide #backBtn');
+  await page.waitForSelector('#student:not([hidden])');
+  await page.click('#toModel');
+  await page.waitForSelector('#model:not([hidden]) .modelpaper', { timeout: 15000 });
+  const MOD = JSON.parse(readFileSync(join(root, 'docs/assets/models.json'), 'utf8'));
+  const nModels = Object.values(MOD).reduce((a, s) => a + Object.keys(s).length, 0);
+  const everyStudent = RAW.students.every(s => MOD[s.sec] && MOD[s.sec][s.angle]);
+  ok('ملف النماذج: نموذج لكلّ زاوية ولكلّ طالب', nModels === 142 && everyStudent, nModels + ' نموذجًا');
+  const mm = MOD[String(st.sec)][String(st.angle)];
+  const got = await page.evaluate(() => ({
+    name: document.querySelector('.mname').textContent,
+    main: document.querySelector('.mmain').textContent,
+    terms: document.querySelectorAll('.mtext mark.term').length,
+    refs: document.querySelectorAll('.mrefs').length,
+    warn: (document.querySelector('#model .warn') || {}).textContent || '',
+    print: !!document.querySelector('#mPrint'),
+  }));
+  ok('النموذج يُعرض كاملًا بعناوينه ومصطلحاته المظلَّلة ومراجعه', got.name === mm.paperName && got.main === mm.mainTitle && got.terms >= 3 && got.refs >= 2 && got.print);
+  ok('تنبيه «للتعلّم لا للنسخ» ظاهر فوق النموذج', got.warn.includes('ممنوع نسخ'));
+  await page.click('#mBack');
+  await page.waitForSelector('#student:not([hidden])');
   await logout(page);
   await page.waitForSelector('#login:not([hidden])');
 }
@@ -171,13 +194,20 @@ ok('دخول 136 طالبًا: الاسم والزاوية و≥3 مصادر و�
   await mp.click('#toGuide');
   await mp.waitForSelector('#guide:not([hidden])');
   pass = pass && await noH();
+  await mp.click('#guide #backBtn');
+  await mp.waitForSelector('#student:not([hidden])');
+  await mp.click('#toModel');
+  await mp.waitForSelector('#model:not([hidden]) .modelpaper', { timeout: 15000 });
+  pass = pass && await noH();
+  await mp.click('#mBack');
+  await mp.waitForSelector('#student:not([hidden])');
   await mp.evaluate(() => localStorage.clear());
-  await mp.click('#gLogout');
+  await mp.click('#logoutBtn');
   await mp.waitForSelector('#login:not([hidden])');
   await login(mp, RAW.teacherCode);
   await mp.waitForSelector('#teacher:not([hidden]) .tabs');
   pass = pass && await noH();
-  ok('لا تمرير أفقيّ على عرض 360px (دخول، طالب، حلّ، معلّم)', pass);
+  ok('لا تمرير أفقيّ على عرض 360px (دخول، طالب، حلّ، نموذج، معلّم)', pass);
   await mctx.close();
 }
 

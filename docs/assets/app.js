@@ -41,10 +41,11 @@ async function tryCode(v){
 /* ---------- حالة عامّة ---------- */
 let D=null;            // البيانات المحمَّلة
 let CUR=null;          // الطالب الحاليّ بعد فكّ سجلّه
-const loginEl=$('#login'),studentEl=$('#student'),guideEl=$('#guide'),teacherEl=$('#teacher');
+let MODELS=null;       // الجرائد النموذجية (تُحمَّل عند أوّل طلب)
+const loginEl=$('#login'),studentEl=$('#student'),guideEl=$('#guide'),teacherEl=$('#teacher'),modelEl=$('#model');
 const angleOf=(sec,n)=>(D.angles[sec]||[]).find(a=>a.n===n);
-function showOnly(el){[loginEl,studentEl,guideEl,teacherEl].forEach(x=>x.hidden=(x!==el));window.scrollTo({top:0})}
-function logout(){store.del('jr23222:last');CUR=null;[studentEl,guideEl,teacherEl].forEach(el=>el.innerHTML='');$('#codeIn').value='';$('#codeIn').placeholder='••••';showOnly(loginEl);$('#codeIn').focus()}
+function showOnly(el){[loginEl,studentEl,guideEl,teacherEl,modelEl].forEach(x=>x.hidden=(x!==el));window.scrollTo({top:0})}
+function logout(){store.del('jr23222:last');CUR=null;[studentEl,guideEl,teacherEl,modelEl].forEach(el=>el.innerHTML='');$('#codeIn').value='';$('#codeIn').placeholder='••••';showOnly(loginEl);$('#codeIn').focus()}
 
 /* ---------- ملء الأوامر ---------- */
 function fillPrompt(p,ctx){
@@ -76,7 +77,8 @@ function openStudent(st){
   const groupsHTML=D.promptGroups.map((g,gi)=>`<button role="tab" aria-selected="${gi===0}" data-g="${g.k}">${esc(g.label)}</button>`).join('');
   studentEl.innerHTML=`
   <div class="who"><div><div class="name">${esc(st.name)}</div><div class="sub">${sec.name} · ${sec.day} ${sec.time} · رقم ${st.n} في السجلّ</div></div><button class="btn ghost small" id="logoutBtn" type="button">خروج</button></div>
-  ${ang?`<button class="bigbtn" id="toGuide" type="button">حلّ وظيفتي بحسب المئشار — خطوة خطوة<small>البنود الثمانية، وتحت كلّ بند خطوات زاويتك أنت، وبجانب كلّ خطوة الأمر الجاهز المناسب لها.</small></button>`:''}
+  ${ang?`<button class="bigbtn" id="toGuide" type="button">حلّ وظيفتي بحسب المئشار — خطوة خطوة<small>البنود الثمانية، وتحت كلّ بند خطوات زاويتك أنت، وبجانب كلّ خطوة الأمر الجاهز المناسب لها.</small></button>
+  <button class="bigbtn mbtn" id="toModel" type="button">الجريدة النموذجية لزاويتي<small>مثال كامل بحسب المئشار على زاويتك أنت: العناوين، التقريران، كلمة المحرّر، المركّب البصريّ — تتعلّم من شكله ولا تنسخ منه.</small></button>`:''}
   <div class="stack">
     <div class="grid2">
       <section class="card"><div class="kicker">موضوع شعبتك</div><h2>${esc(sec.topic)}</h2><ul style="margin:0;padding-right:18px">${sec.items.map(i=>`<li>${esc(i)}</li>`).join('')}</ul><p class="small muted" style="margin:10px 0 0">بنود الميكود 2027 التي تُقيَّم بالجريدة وحدها؛ الامتحان الخارجيّ ليس عليها.</p></section>
@@ -112,7 +114,7 @@ function openStudent(st){
       <p class="small muted" style="margin:10px 0 0">عبارة «استعمل بشكل نقديّ ومسؤول أدوات الذكاء الاصطناعيّ» تتكرّر في ستّة بنود من المئشار، والمردودية الصوتية (20 نقطة) تكشف من لم يكتب بنفسه.</p></section>
   </div>`;
   $('#logoutBtn').addEventListener('click',logout);
-  if(ang)$('#toGuide').addEventListener('click',()=>openGuide(st));
+  if(ang){$('#toGuide').addEventListener('click',()=>openGuide(st));$('#toModel').addEventListener('click',()=>openModel(st.sec,st.angle,'student'))}
   // prompts
   const list=$('#promptList'),note=$('#stageNote');
   function renderGroup(k){
@@ -196,6 +198,67 @@ function openGuide(st){
   showOnly(guideEl);
 }
 
+/* ---------- الجريدة النموذجية ---------- */
+async function loadModels(){
+  if(MODELS)return MODELS;
+  const r=await fetch('assets/models.json');
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  MODELS=await r.json();return MODELS;
+}
+function markTerms(text,terms){
+  let h=esc(text);
+  (terms||[]).filter(Boolean).forEach(t=>{const e=esc(t);h=h.split(e).join('<mark class="term">'+e+'</mark>')});
+  return h.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+}
+async function openModel(sec,n,back){
+  let m;
+  try{m=(await loadModels())[sec]&&(await loadModels())[sec][n]}catch(e){alert('تعذّر تحميل النماذج؛ أعد تحميل الصفحة.');return}
+  if(!m){alert('لا نموذج لهذه الزاوية بعد.');return}
+  const ang=angleOf(sec,n);const sec_=D.sections[sec];
+  const refList=refs=>`<p class="mrefs">المراجع: ${refs.map(esc).join(' · ')}</p>`;
+  modelEl.innerHTML=`
+  <div class="who noprint"><div><div class="name">الجريدة النموذجية — وظيفة ${n} · ${sec_.name}</div><div class="sub">مثال كامل بحسب المئشار على زاويتك — للتعلّم لا للنسخ</div></div>
+  <div style="display:flex;gap:8px"><button class="btn ghost small" id="mPrint" type="button">طباعة</button><button class="btn ghost small" id="mBack" type="button">رجوع</button></div></div>
+  <div class="warn noprint" style="margin-top:14px"><b>هذه الجريدة كتبها الذكاء الاصطناعيّ بطلب المعلّم لتريك الشكل النهائيّ المطلوب.</b> ممنوع نسخ أيّ جملة منها: المئشار يشترط نصًّا مستقلًّا بلغتك أنت في كلّ جزء، والمردودية الصوتية (20 نقطة) تكشف من لم يكتب بنفسه. المصطلحات المدمجة مظلَّلة لتري كيف تُدمج في الجمل لا في قائمة.</div>
+  <article class="modelpaper">
+    <header class="mhead">
+      <div class="mdate"><span class="tag blue noprint">تاريخ الإصدار — من البند 1</span><br>${esc(m.issueDate)}</div>
+      <h2 class="mname">${esc(m.paperName)}</h2>
+      <div class="mslogan">جريدة شخصية · ${esc(sec_.topic)}</div>
+    </header>
+    <div class="mtitles">
+      <span class="tag red noprint">البند 5 — العناوين (10 نقاط مع البصريّ)</span>
+      <h3 class="mmain">${esc(m.mainTitle)}</h3>
+      <p class="msub">${esc(m.subTitle)}</p>
+    </div>
+    <figure class="mvisual">
+      <div class="mframe"><span>المركّب البصريّ</span>${esc(m.visual.what)}</div>
+      <figcaption>${esc(m.visual.caption)}<br><b>المصدر:</b> ${esc(m.visual.source)}${m.visual.url?` — <a href="${/^https?:/.test(m.visual.url)?esc(m.visual.url):'https://'+esc(m.visual.url)}" target="_blank" rel="noopener">${esc(m.visual.url)}</a>`:''}</figcaption>
+    </figure>
+    <section class="msec">
+      <span class="tag red noprint">التقرير الإخباريّ المركزيّ — البندان 1 و3</span>
+      <div class="mtext"><p>${markTerms(m.central.text,m.terms.central)}</p></div>
+      ${refList(m.central.refs)}
+    </section>
+    <section class="msec alt">
+      <span class="tag blue noprint">التقرير الثانويّ (${esc(m.secondary.type)}) — البنود 2 و6 و7</span>
+      <h4 class="mh4">${esc(m.secondary.title)}</h4>
+      ${m.secondary.fictionNote?'<p class="mfiction">مقابلة متخيَّلة مع شخصية تاريخية متوفّاة؛ الأجوبة مبنية على مواقفها الموثَّقة، وليست نصًّا حرفيًّا.</p>':''}
+      <div class="mtext"><p>${markTerms(m.secondary.text,[m.terms.secondary])}</p></div>
+      ${refList([m.secondary.ref])}
+    </section>
+    <section class="msec editor">
+      <span class="tag amber noprint">كلمة المحرّر — البند 4</span>
+      <h4 class="mh4">${esc(m.editor.title)}</h4>
+      <div class="mtext"><p>${markTerms(m.editor.text,[m.terms.editor])}</p></div>
+    </section>
+    <footer class="mfoot">نموذج تعليميّ أُعدّ بالذكاء الاصطناعيّ بطلب المعلّم · الجريدة الشخصية 23222 · زاوية ${n} — ${sec_.name}</footer>
+  </article>`;
+  $('#mBack').addEventListener('click',()=>{showOnly(back==='teacher'?teacherEl:studentEl)});
+  $('#mPrint').addEventListener('click',()=>window.print());
+  showOnly(modelEl);
+}
+
 /* ---------- لوحة المعلّم ---------- */
 function openTeacher(T){
   const secs=[1,2,3,4];
@@ -206,12 +269,13 @@ function openTeacher(T){
   $('#tLogout').addEventListener('click',logout);
   const body=$('#tBody');
   function show(s){const sec=D.sections[s];const sts=T.students.filter(x=>x.sec===s);
-    const rows=sts.map(st=>{const a=st.angle?angleOf(st.sec,st.angle):null;return `<tr><td>${st.n}</td><td>${esc(st.name)}${st.ar?`<div class="small muted">${esc(st.ar)}</div>`:''}</td><td><span class="code">${st.code}</span></td><td>${a?`<b>${a.n}</b> ${st.prov?'<span class="tag amber">مقترحة</span>':''}${a.new?'<span class="tag blue">جديدة</span>':''}<div class="small muted">${esc(a.angle)}</div>`:'<span class="tag">بلا زاوية</span>'}</td></tr>`}).join('');
+    const rows=sts.map(st=>{const a=st.angle?angleOf(st.sec,st.angle):null;return `<tr><td>${st.n}</td><td>${esc(st.name)}${st.ar?`<div class="small muted">${esc(st.ar)}</div>`:''}</td><td><span class="code">${st.code}</span></td><td>${a?`<b>${a.n}</b> ${st.prov?'<span class="tag amber">مقترحة</span>':''}${a.new?'<span class="tag blue">جديدة</span>':''} <button class="linkbtn mlink" type="button" data-sec="${st.sec}" data-n="${a.n}">النموذج</button><div class="small muted">${esc(a.angle)}</div>`:'<span class="tag">بلا زاوية</span>'}</td></tr>`}).join('');
     const used=new Set(sts.map(x=>x.angle).filter(Boolean));const free=(D.angles[s]||[]).filter(a=>!used.has(a.n));
     body.innerHTML=`<p class="small muted" style="margin:0 0 8px">${sec.name} · ${sec.day} ${sec.time} · ${esc(sec.topic)} · مقترحة بانتظار التثبيت: ${sts.filter(x=>x.prov).length} · بلا زاوية: ${sts.filter(x=>!x.angle).length}</p>
     <div class="tablewrap"><table><thead><tr><th>#</th><th>الطالب</th><th>الرمز</th><th>الزاوية</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="copy" id="copyCodes" type="button">نسخ قائمة الأسماء والرموز</button><button class="copy" id="csvBtn" type="button">تصدير CSV</button></div>
-    ${free.length?`<h3 style="font-size:16px;margin:18px 0 6px">زوايا حرّة في ${sec.name} (${free.length})</h3><ul style="margin:0;padding-right:18px;font-size:15px">${free.map(a=>`<li><b>${a.n}</b> — ${esc(a.angle)}</li>`).join('')}</ul>`:''}`;
+    ${free.length?`<h3 style="font-size:16px;margin:18px 0 6px">زوايا حرّة في ${sec.name} (${free.length})</h3><ul style="margin:0;padding-right:18px;font-size:15px">${free.map(a=>`<li><b>${a.n}</b> — ${esc(a.angle)} <button class="linkbtn mlink" type="button" data-sec="${s}" data-n="${a.n}">النموذج</button></li>`).join('')}</ul>`:''}`;
+    body.querySelectorAll('.mlink').forEach(b=>b.addEventListener('click',()=>openModel(+b.dataset.sec,+b.dataset.n,'teacher')));
     $('#copyCodes').addEventListener('click',e=>copyText(sec.name+'\n'+sts.map(st=>`${st.n}\t${st.name}\t${st.code}\t${st.angle?('وظيفة '+st.angle):'—'}`).join('\n'),e.currentTarget));
     $('#csvBtn').addEventListener('click',()=>{
       const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
