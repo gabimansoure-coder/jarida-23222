@@ -46,6 +46,10 @@ for (const f of files) {
       return t;
     });
     if (/مقابلة/.test(m.secondary.type) && !m.secondary.fictionNote) bad.push('مقابلة بلا fictionNote');
+    if (m.sourcesEval) {
+      if (!(Array.isArray(m.sourcesEval) && m.sourcesEval.length === 3)) bad.push('sourcesEval ≠ 3');
+      else for (const e of m.sourcesEval) for (const k of ['src', 'type', 'rel', 'why', 'fit']) if (!e[k]) bad.push(`sourcesEval.${k}`);
+    }
     const ang = (RAW.angles[String(m.sec)] || []).find(a => a.n === m.n);
     if (!ang) bad.push('زاوية غير موجودة في data.json');
   }
@@ -58,7 +62,8 @@ const expected = Object.entries(RAW.angles).flatMap(([s, arr]) => arr.map(a => `
 const have = new Set(files);
 const missing = expected.filter(f => !have.has(f));
 
-console.log(`صالح: ${okCount} / متوقَّع: ${expected.length}`);
+const enriched = Object.values(out).flatMap(s => Object.values(s)).filter(m => m.sourcesEval).length;
+console.log(`صالح: ${okCount} / متوقَّع: ${expected.length} (مغنًى بـsourcesEval: ${enriched})`);
 if (missing.length) console.log('ناقص: ' + missing.join('، '));
 if (errs.length) { console.log('مشاكل:'); errs.forEach(e => console.log('  - ' + e)); }
 

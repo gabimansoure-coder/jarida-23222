@@ -166,5 +166,14 @@ tr.next td{background:var(--amber-soft)}
   .noprint,.masthead,.foot{display:none!important}
   body{background:#fff}
   .modelpaper{box-shadow:none;border:0;max-width:none;padding:0}
-  .mtext mark.term{background:none;color:inherit;font-weight:inherit}
+  .mtext mark.term{background:none;color:inherit;font-weight:700}
 }
+.msec.refl{background:var(--amber-soft);border:1px solid var(--rule);border-radius:8px;padding:16px 18px;margin-top:22px}
+.mrefl{margin:0;padding-right:20px;font-size:15px;line-height:1.9}
+.mrefl li+li{margin-top:8px}
+.mimg{max-width:100%;border:2px solid var(--ink);border-radius:2px;display:block;margin:0 auto}
+.meval{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.meval li{padding:10px 12px;border:1px solid var(--rule-2);border-radius:8px;background:var(--paper);font-size:14px;line-height:1.8}
+.modelpaper{overflow-wrap:break-word}
+.mrefs{overflow-wrap:anywhere}
+.meval li{overflow-wrap:anywhere}

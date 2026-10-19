@@ -113,6 +113,22 @@ ok('دخول 136 طالبًا: الاسم والزاوية و≥3 مصادر و�
   const csv = await page.$('#csvBtn') !== null;
   ok('رمز المعلّم يفتح اللوحة بأربع شعب (34، 37، 34، 31)', pass, 'الصفوف: ' + rowCounts.join('، '));
   ok('زرّا «نسخ القائمة» و«تصدير CSV» موجودان', csv && (await page.$('#copyCodes')) !== null);
+  // العروض الشخصية العشرون
+  await page.click('#presLoad');
+  await page.waitForSelector('#presList .plink');
+  const nPres = await page.$$eval('#presList .plink', b => b.length);
+  await page.click('#presList .plink >> nth=0');
+  await page.waitForSelector('#model:not([hidden]) .modelpaper');
+  const pr = await page.evaluate(() => ({
+    slides: document.querySelectorAll('#model .gstep').length,
+    apa: document.querySelectorAll('#model .src li').length,
+    evalN: document.querySelectorAll('#model .meval li').length,
+    rubric: (document.querySelector('#model details summary') || {}).textContent || '',
+  }));
+  ok('لوحة المعلّم: 20 وظيفة عرض شخصيّ', nPres === 20, nPres + '');
+  ok('وظيفة العرض: شرائح «ما وراء الكواليس» و3 مصادر APA مصنَّفة ومئشار كامل', pr.slides >= 6 && pr.apa === 3 && pr.evalN === 3 && pr.rubric.includes('مئشار العرض'));
+  await page.click('#mBack');
+  await page.waitForSelector('#teacher:not([hidden])');
   await logout(page);
   await page.waitForSelector('#login:not([hidden])');
 }
@@ -173,6 +189,21 @@ ok('دخول 136 طالبًا: الاسم والزاوية و≥3 مصادر و�
   }));
   ok('النموذج يُعرض كاملًا بعناوينه ومصطلحاته المظلَّلة ومراجعه', got.name === mm.paperName && got.main === mm.mainTitle && got.terms >= 3 && got.refs >= 2 && got.print);
   ok('تنبيه «للتعلّم لا للنسخ» ظاهر فوق النموذج', got.warn.includes('ممنوع نسخ'));
+  const extra = await page.evaluate(() => ({
+    refl: !!document.querySelector('#model .msec.refl'),
+    evalBlock: (document.querySelector('#model .meval') || {}).textContent || '',
+    img: !!document.querySelector('#model .mimg'),
+    noSchool: !document.querySelector('#model .modelpaper').textContent.includes('عمّال الصديق') && !document.querySelector('#model .modelpaper').textContent.includes('جبريل'),
+  }));
+  ok('كتلة تدريب المردودية موجودة في النموذج', extra.refl);
+  ok('تصنيف المصادر الثلاثة معروض', extra.evalBlock.includes('موثوقيّة'));
+  ok('لا ذكر للمدرسة أو المعلّم داخل النموذج', extra.noSchool);
+  {
+    const IMGS = JSON.parse(readFileSync(join(root, 'docs/assets/imgs.json'), 'utf8'));
+    const nImgs = Object.values(IMGS).reduce((a, s) => a + Object.keys(s).length, 0);
+    const hasThis = !!(IMGS[st.sec] && IMGS[st.sec][st.angle]);
+    ok('صور المركّب البصريّ متوفّرة ومعروضة', nImgs >= 120 && (!hasThis || extra.img), nImgs + ' صورة');
+  }
   await page.click('#mBack');
   await page.waitForSelector('#student:not([hidden])');
   await logout(page);
