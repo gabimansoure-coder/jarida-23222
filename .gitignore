@@ -1,10 +1,6 @@
-# البيانات الخامّ (أسماء ورموز مكشوفة) — لا تُرفع أبدًا
-/data.json
-/index.html
-/PROMPT-claude-code.md
-
+# الأسماء والرموز — لا تُرفع أبدًا
+/data/
+/تقرير*
 node_modules/
-test-results/
 *.log
 .DS_Store
-.claude/
